@@ -1,0 +1,2 @@
+label,part,period_ns,lut,ff,dsp,bram,srl,wns_ns,fmax_mhz,power_w
+cordic_i16_d16,xc7z020clg400-1,2.0,1616,1814,0,0,11,-3.235,191.0,0.433

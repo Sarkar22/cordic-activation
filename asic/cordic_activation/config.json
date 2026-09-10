@@ -1,0 +1,29 @@
+{
+    "DESIGN_NAME": "cordic_activation",
+    "VERILOG_FILES": "dir::src/*.sv",
+    "CLOCK_PERIOD": 10,
+    "CLOCK_PORT": "clk",
+    "CLOCK_NET": "ref::$CLOCK_PORT",
+    "FP_PDN_VOFFSET": 7,
+    "FP_PDN_HOFFSET": 7,
+    "FP_PDN_SKIPTRIM": true,
+    "pdk::sky130*": {
+        "FP_CORE_UTIL": 40,
+        "scl::sky130_fd_sc_hd": {
+            "CLOCK_PERIOD": 10
+        },
+        "scl::sky130_fd_sc_hdll": {
+            "CLOCK_PERIOD": 10
+        },
+        "scl::sky130_fd_sc_hs": {
+            "CLOCK_PERIOD": 8
+        },
+        "scl::sky130_fd_sc_ls": {
+            "CLOCK_PERIOD": 10,
+            "MAX_FANOUT_CONSTRAINT": 5
+        },
+        "scl::sky130_fd_sc_ms": {
+            "CLOCK_PERIOD": 10
+        }
+    }
+}

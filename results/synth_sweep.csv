@@ -1,0 +1,6 @@
+label,part,period_ns,lut,ff,dsp,bram,srl,wns_ns,fmax_mhz,power_w
+cordic_i8_d8,xck26-sfvc784-2LV-c,2.0,705,825,0,0,2,0.043,511.0,0.456
+cordic_i10_d10,xck26-sfvc784-2LV-c,2.0,902,1052,0,0,3,0.030,507.6,0.476
+cordic_i12_d12,xck26-sfvc784-2LV-c,2.0,1119,1280,0,0,5,-0.017,495.8,0.495
+cordic_i14_d14,xck26-sfvc784-2LV-c,2.0,1395,1581,0,0,7,0.009,502.3,0.516
+cordic_i16_d16,xck26-sfvc784-2LV-c,2.0,1616,1814,0,0,11,0.018,504.5,0.527
