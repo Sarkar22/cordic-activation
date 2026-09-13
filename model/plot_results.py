@@ -68,8 +68,12 @@ if syn:
     ax.grid(True, ls=":", lw=0.5)
     ax2 = ax.twinx(); ax2.plot(im, fmax, "^--", color="green", label="Fmax")
     ax2.set_ylabel("Fmax (MHz)", color="green")
+    # Fmax moves only a few percent; an auto-scaled axis would draw that as a collapse.
+    mid = 0.5 * (max(fmax) + min(fmax))
+    ax2.set_ylim(0.9 * mid, 1.1 * mid)
     l1, lb1 = ax.get_legend_handles_labels(); l2, lb2 = ax2.get_legend_handles_labels()
-    ax.legend(l1+l2, lb1+lb2, fontsize=8, loc="upper left")
+    ax.legend(l1+l2, lb1+lb2, fontsize=8, loc="lower center", bbox_to_anchor=(0.5, 1.0),
+              ncol=3, frameon=False)
     save(fig, "fig_area")
 
     # --- Fig 4: accuracy-area Pareto -----------------------------------------
@@ -80,9 +84,13 @@ if syn:
         pl = [imax_of(r["label"]) for r in syn if imax_of(r["label"]) in amap]
         fig, ax = plt.subplots(figsize=(4.2, 3.0))
         ax.semilogy(px, py, "o-")
-        for xx, yy, ll in zip(px, py, pl):
-            ax.annotate(f"imax={ll}", (xx, yy), fontsize=7,
-                        textcoords="offset points", xytext=(4, 4))
+        # the curve flattens at the high end, so side labels there run into each other
+        for k, (xx, yy, ll) in enumerate(zip(px, py, pl)):
+            below = k >= len(px) - 2
+            ax.annotate(f"imax={ll}", (xx, yy), fontsize=7, textcoords="offset points",
+                        xytext=(0, -9) if below else (5, 3),
+                        ha="center" if below else "left", va="top" if below else "baseline")
+        ax.margins(x=0.10, y=0.18)
         ax.set_xlabel("LUTs"); ax.set_ylabel("tanh max abs error")
         ax.grid(True, which="both", ls=":", lw=0.5)
         save(fig, "fig_pareto")
