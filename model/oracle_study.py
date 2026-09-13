@@ -17,6 +17,11 @@ Semantics of truncation == hardware early exit:
   a folded engine that retires early would compute.
   Pin stage k*(x) = smallest k s.t. eval(x, j, ND) == eval(x, NH, ND) for ALL j >= k
   (suffix-stable, so a sound detector stopping at k* is always correct).
+
+Also reported, as an upper reference: the first-hit genie, which stops at the first stage
+whose output is correct even if a later stage changes it again, per phase and as the best
+joint (k, d) pair. It credits transient agreement that a detector of the stable condition
+cannot use, so it bounds nothing achievable; it shows how much the definition matters.
 """
 import os, sys, csv
 
@@ -37,6 +42,7 @@ def study(fn, name):
     codes = range(LO, HI + 1)
     full = {}
     khyp, ddiv, joint_ok, cyc = {}, {}, {}, {}
+    cyc_fh, cyc_jt = {}, {}            # first-hit genie: per phase, best joint (k, d)
     for x in codes:
         f = fn(x, NH, ND)
         full[x] = f
@@ -61,6 +67,21 @@ def study(fn, name):
         ok = fn(x, k, d) == f
         joint_ok[x] = ok
         cyc[x] = OVH + (k + d if ok else min(k + ND, NH + d))
+        # first-hit genie: first stage whose output is correct, stable or not
+        kf = next(j for j in range(NH + 1) if outs[j] == f)
+        df = next(j for j in range(ND + 1) if outs_d[j] == f)
+        cyc_fh[x] = OVH + (kf + df if fn(x, kf, df) == f else min(kf + ND, NH + df))
+        best = NH + ND
+        for kk in range(NH + 1):
+            if kk >= best:
+                break
+            for dd in range(ND + 1):
+                if kk + dd >= best:
+                    break
+                if fn(x, kk, dd) == f:
+                    best = kk + dd
+                    break
+        cyc_jt[x] = OVH + best
     # trivial constant tails (what a 1-cycle comparator+constant bypass may claim)
     hi_t = HI
     while hi_t > 0 and full[hi_t - 1] == full[HI]:
@@ -75,7 +96,7 @@ def study(fn, name):
           f"x >= {hi_t} ({hi_t/QF:+.4f}) out={full[HI]}  "
           f"-> bypass covers {n_bypass}/{HI-LO+1} codes ({100*n_bypass/(HI-LO+1):.1f}%)")
     print(f"joint (k*,d*) exact for {sum(joint_ok.values())}/{HI-LO+1} codes")
-    return dict(full=full, khyp=khyp, ddiv=ddiv, cyc=cyc,
+    return dict(full=full, khyp=khyp, ddiv=ddiv, cyc=cyc, cyc_fh=cyc_fh, cyc_jt=cyc_jt,
                 in_bypass=in_bypass, lo_t=lo_t, hi_t=hi_t)
 
 def dist_stats(name, R, weights):
@@ -91,6 +112,11 @@ def dist_stats(name, R, weights):
     print(f"  {name:34s} oracle {mean_oracle:5.1f} | bypass-only {mean_bypass:5.1f} | "
           f"oracle+bypass {mean_both:5.1f} cyc "
           f"({100*(1-mean_both/FULL_CYC):4.1f}% vs full, +{extra:4.1f}% beyond bypass)")
+    fh = [100 * (mean_bypass - sum((1 if R["in_bypass"](x) else R[key][x]) * w
+                                   for x, w in weights.items()) / tot) / mean_bypass
+          for key in ("cyc_fh", "cyc_jt")]
+    print(f"  {'':34s} first-hit genie, beyond bypass: +{fh[0]:4.1f}% per phase, "
+          f"+{fh[1]:4.1f}% best joint (k, d)")
     return mean_both, mean_bypass, extra
 
 def uniform(pred=lambda x: True):
@@ -126,8 +152,12 @@ def main():
         dist_stats(f"MLP workload ({sum(wl.values())} evals)", R, wl)
         ks = np.array([R["khyp"][x] for x in range(LO, HI + 1)])
         ds = np.array([R["ddiv"][x] for x in range(LO, HI + 1)])
-        print(f"  k* (hyp stages needed): mean {ks.mean():.1f} / max {ks.max()} of {NH}")
-        print(f"  d* (div iters  needed): mean {ds.mean():.1f} / max {ds.max()} of {ND}")
+        nt = [x for x in range(LO, HI + 1) if not R["in_bypass"](x)]
+        kn = np.mean([R["khyp"][x] for x in nt]); dn = np.mean([R["ddiv"][x] for x in nt])
+        print(f"  k* (hyp stages needed): mean {ks.mean():.1f} all codes, {kn:.1f} "
+              f"non-trivial / max {ks.max()} of {NH}")
+        print(f"  d* (div iters  needed): mean {ds.mean():.1f} all codes, {dn:.1f} "
+              f"non-trivial / max {ds.max()} of {ND}")
         # dump per-code CSV for later figures
         os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
         with open(os.path.join(ROOT, "results", f"oracle_{name}.csv"), "w") as f:

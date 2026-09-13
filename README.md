@@ -8,10 +8,10 @@ number below is reproduced by the scripts in this repository.
 ## Results
 
 - **16384/16384 bit-exact** against the golden model, for tanh *and* sigmoid (all input codes)
-- Max error ≈ 1.2 LSB of Q2.12; latency 37 cycles
+- Accuracy: tanh within 1.2 LSB of Q2.12 across the hyperbolic convergence range |x| ≤ 1.118; beyond it the tanh output saturates at tanh(1.118) ≈ 0.807 (up to 644 LSB off near |x| = 2). Sigmoid stays within 0.9 LSB over the full Q2.12 range. Latency 37 cycles
 - KV260 (xck26) place-and-route: 1616 LUT / 1814 FF / **0 DSP / 0 BRAM**
 - sky130 ASIC: 0.404 mm², 14,891 cells, DRC clean and LVS clean
-- Oracle study: over all 2^14 inputs, a *perfect* early-exit oracle saves only 18-23% beyond a saturation-comparator bypass, so early-exit hardware was not built
+- Oracle study: over all 2^14 inputs, a *perfect* detector of the point after which the output can no longer change saves only 18-23% beyond an out-of-range comparator bypass, so early-exit hardware was not built. A first-hit genie, which also credits outputs that a later stage changes, reaches 30.5-42.1%; `oracle_study.py` reports both
 
 ## Reproducing
 
@@ -46,7 +46,7 @@ reported numbers were produced with.
 | tool | used | purpose |
 |---|---|---|
 | Icarus Verilog | 12.0 | simulation (`iverilog -g2012`) |
-| Python 3 | 3.12 + numpy | golden models and analysis |
+| Python 3 | 3.12 + numpy (matplotlib for figures) | golden models and analysis |
 | AMD Vivado | 2024.2 | FPGA synthesis and place-and-route |
 | OpenLane | v1.0.2, sky130A PDK | open-source RTL-to-GDSII |
 
